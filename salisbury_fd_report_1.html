@@ -448,8 +448,8 @@ require([
         const ws=new Date(we); ws.setDate(we.getDate()-6); ws.setHours(0,0,0,0);
         const wr=all.filter(r=>{if(!r.call_create)return false;const dt=new Date(r.call_create);return dt>=ws&&dt<=we;});
         tLabels.push(we.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
-        fireD.push(avg(wr.filter(r=>(r.discipline||'').toUpperCase()==='FIRE').map(r=>r.response_min)));
-        emsD.push(avg(wr.filter(r=>(r.discipline||'').toUpperCase()==='MEDICAL').map(r=>r.response_min)));
+        fireD.push(avg(wr.filter(r=>(r.discipline||'').toUpperCase()==='FIRE').map(r=>r.travel_min)));
+        emsD.push(avg(wr.filter(r=>(r.discipline||'').toUpperCase()==='MEDICAL').map(r=>r.travel_min)));
       }
       if(trendChartInst){trendChartInst.destroy();}
       trendChartInst=new Chart(document.getElementById('trendChart'),{
