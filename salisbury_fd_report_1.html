@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salisbury FD — Weekly Operations Report</title>
+<link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f0f0f0;color:#222}
+  .page{max-width:960px;margin:0 auto;padding:24px;background:#fff}
+  .login-screen{max-width:420px;margin:80px auto;background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;padding:40px;text-align:center}
+  .login-logo{width:80px;height:80px;object-fit:contain;margin:0 auto 20px;display:block}
+  .login-title{font-size:20px;font-weight:500;margin-bottom:6px}
+  .login-sub{font-size:13px;color:#888;margin-bottom:24px;line-height:1.5}
+  .login-btn{display:block;width:100%;padding:12px;background:#A32D2D;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;letter-spacing:0.02em}
+  .login-btn:hover{background:#791F1F}
+  .login-note{font-size:11px;color:#aaa;margin-top:14px}
+  .header{background:#2C2C2C;color:#fff;border-radius:10px;padding:20px 28px;margin-bottom:20px;display:flex;gap:20px;align-items:center}
+  .logo-wrap{width:80px;height:80px;flex-shrink:0;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .logo-wrap img{width:100%;height:100%;object-fit:contain}
+  .header-content{flex:1}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .dept{font-size:10px;letter-spacing:0.07em;text-transform:uppercase;opacity:0.55;margin-bottom:3px}
+  .report-title{font-size:22px;font-weight:500}
+  .report-sub{font-size:13px;opacity:0.55;margin-top:2px}
+  .header-badge{background:#A32D2D;color:#fff;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;letter-spacing:0.04em;white-space:nowrap}
+  .header-meta{display:flex;gap:24px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);flex-wrap:wrap}
+  .meta-item{font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.04em}
+  .meta-item span{display:block;font-size:14px;font-weight:500;color:#fff;margin-top:2px;text-transform:none;letter-spacing:0}
+  .user-bar{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-bottom:12px}
+  .user-name{font-size:12px;color:#888}
+  .logout-btn{font-size:11px;color:#A32D2D;background:none;border:0.5px solid #A32D2D;border-radius:6px;padding:3px 10px;cursor:pointer}
+  .logout-btn:hover{background:#fcebeb}
+  .section-label{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#888;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid #e8e8e8}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+  .metric-card{background:#f7f7f7;border-radius:8px;padding:14px 16px}
+  .metric-label{font-size:11px;color:#888;margin-bottom:6px;font-weight:500}
+  .metric-value{font-size:26px;font-weight:500;color:#222;line-height:1}
+  .metric-sub{font-size:11px;color:#888;margin-top:4px}
+  .metric-delta{font-size:11px;margin-top:4px;font-weight:500}
+  .delta-up{color:#3B6D11}
+  .delta-down{color:#A32D2D}
+  .card{background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-bottom:20px}
+  .goal-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid #f2f2f2}
+  .goal-row:last-child{border-bottom:none}
+  .goal-name{font-size:12px;flex:1;min-width:0}
+  .goal-target{font-size:11px;color:#888;width:55px;text-align:right;flex-shrink:0}
+  .bar-wrap{width:110px;height:7px;background:#ebebeb;border-radius:4px;flex-shrink:0;position:relative}
+  .bar-fill{height:7px;border-radius:4px}
+  .bar-target-line{position:absolute;top:-3px;height:13px;width:2px;background:#2C2C2C;border-radius:1px}
+  .pct{font-size:12px;font-weight:500;width:34px;text-align:right;flex-shrink:0}
+  .met{color:#3B6D11}
+  .not-met{color:#A32D2D}
+  .amber{color:#BA7517}
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:6px 2px}
+  .gauge-label{font-size:10px;color:#888;text-align:center;margin-bottom:6px;font-weight:500;line-height:1.3}
+  .gauge-pct{font-size:18px;font-weight:500;margin-top:2px}
+  .gauge-target-lbl{font-size:10px;color:#aaa;margin-top:1px}
+  .district-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #f2f2f2}
+  .district-row:last-child{border-bottom:none}
+  .district-name{font-size:12px;flex:1}
+  .district-bar{flex:2;height:6px;background:#ebebeb;border-radius:3px}
+  .district-fill{height:6px;border-radius:3px;background:#A32D2D}
+  .district-count{font-size:12px;font-weight:500;width:28px;text-align:right}
+  .district-ytd{font-size:11px;color:#888;width:52px;text-align:right}
+  .disc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid #f2f2f2}
+  .disc-row:last-child{border-bottom:none}
+  .disc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .disc-name{font-size:12px;flex:1;margin-left:8px}
+  .disc-week{font-size:12px;font-weight:500;width:28px;text-align:right}
+  .disc-ytd{font-size:11px;color:#888;width:52px;text-align:right}
+  .avg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;padding-top:12px;border-top:0.5px solid #f2f2f2}
+  .avg-item{text-align:center}
+  .avg-label{font-size:10px;color:#888;margin-bottom:3px}
+  .avg-value{font-size:18px;font-weight:500}
+  .trend-legend{display:flex;gap:20px;margin-top:10px;font-size:11px;color:#888}
+  .legend-swatch{width:16px;height:2px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:4px}
+  .footer{margin-top:20px;padding-top:14px;border-top:0.5px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center}
+  .footer-text{font-size:11px;color:#aaa}
+  .loading{text-align:center;padding:60px;color:#888;font-size:15px}
+  .error-msg{background:#fcebeb;color:#791F1F;padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px}
+  .print-btn{display:block;width:100%;margin-top:20px;padding:13px;background:#A32D2D;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;text-align:center;letter-spacing:0.02em}
+  .print-btn:hover{background:#791F1F}
+  .week-nav{display:flex;align-items:center;gap:12px;margin-bottom:20px;background:#f7f7f7;border-radius:8px;padding:10px 16px}
+  .week-nav label{font-size:12px;color:#888;font-weight:500}
+  .week-nav input{font-size:13px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#fff}
+  .week-nav button{padding:6px 14px;background:#2C2C2C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer}
+  .week-nav button:hover{background:#444}
+  @media print{
+    body{background:#fff}
+    .page{padding:0;max-width:100%}
+    .print-btn,.week-nav,.user-bar,.login-screen{display:none!important}
+    .header{border-radius:0}
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="page">
+  <div class="login-screen">
+    <img class="login-logo"
+      src="https://salisbury.maps.arcgis.com/sharing/rest/content/items/33492bb1f8584dca9449da8c155f936a/data"
+      alt="Salisbury FD"
+      onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><rect width=\'80\' height=\'80\' rx=\'8\' fill=\'%23A32D2D\'/><text x=\'50%25\' y=\'55%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'white\' font-size=\'22\' font-family=\'Arial\'>SFD</text></svg>'">
+    <div class="login-title">Salisbury Fire Department</div>
+    <div class="login-sub">Weekly Operations Report<br>Sign in with your ArcGIS Online account to view your department's live data.</div>
+    <button class="login-btn" onclick="signIn()">Sign in with ArcGIS Online</button>
+    <div class="login-note">Your credentials are handled securely by Esri — this page never stores your password.</div>
+  </div>
+</div>
+
+<div id="report-page" class="page" style="display:none">
+  <div class="user-bar">
+    <span class="user-name" id="user-display"></span>
+    <button class="logout-btn" onclick="signOut()">Sign out</button>
+  </div>
+
+  <div id="loading" class="loading">Loading report data...</div>
+  <div id="error" style="display:none"></div>
+
+  <div id="report-content" style="display:none">
+    <div class="week-nav">
+      <label>Report week ending:</label>
+      <input type="date" id="week-end">
+      <button onclick="loadReport()">Update</button>
+      <span style="font-size:12px;color:#aaa;margin-left:auto">Live data from NERIS via ArcGIS</span>
+    </div>
+
+    <div class="header">
+      <div class="logo-wrap">
+        <img src="https://salisbury.maps.arcgis.com/sharing/rest/content/items/33492bb1f8584dca9449da8c155f936a/data"
+          alt="Salisbury FD Logo"
+          onerror="this.parentElement.innerHTML='<span style=\'font-size:18px;font-weight:500;color:rgba(255,255,255,0.6)\'>SFD</span>'">
+      </div>
+      <div class="header-content">
+        <div class="header-top">
+          <div>
+            <div class="dept">City of Salisbury Fire Department</div>
+            <div class="report-title">Weekly Operations Report</div>
+            <div class="report-sub" id="report-date-range">Loading...</div>
+          </div>
+          <div class="header-badge" id="report-quarter">FY2026</div>
+        </div>
+        <div class="header-meta">
+          <div class="meta-item">Calls this week<span id="h-week-total">—</span></div>
+          <div class="meta-item">YTD total calls<span id="h-ytd-total">—</span></div>
+          <div class="meta-item">FF casualties this week<span id="h-ff-week">—</span></div>
+          <div class="meta-item">YTD FF casualty rate<span id="h-ff-rate">—</span></div>
+          <div class="meta-item">Report generated<span id="h-generated">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Weekly call volume vs YTD weekly average</div>
+    <div class="grid-4" style="margin-bottom:20px">
+      <div class="metric-card"><div class="metric-label">Fire calls</div><div class="metric-value" id="m-fire-week">—</div><div class="metric-sub">YTD avg: <strong id="m-fire-avg">—</strong> / wk</div><div id="m-fire-delta"></div></div>
+      <div class="metric-card"><div class="metric-label">EMS calls</div><div class="metric-value" id="m-ems-week">—</div><div class="metric-sub">YTD avg: <strong id="m-ems-avg">—</strong> / wk</div><div id="m-ems-delta"></div></div>
+      <div class="metric-card"><div class="metric-label">Public service</div><div class="metric-value" id="m-pub-week">—</div><div class="metric-sub">YTD avg: <strong id="m-pub-avg">—</strong> / wk</div><div id="m-pub-delta"></div></div>
+      <div class="metric-card"><div class="metric-label">Non-emergency</div><div class="metric-value" id="m-noe-week">—</div><div class="metric-sub">YTD avg: <strong id="m-noe-avg">—</strong> / wk</div><div id="m-noe-delta"></div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-label">FY26 goal performance — this week</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px" id="gauges-grid"></div>
+      </div>
+      <div class="card">
+        <div class="section-label">YTD goal progress</div>
+        <div id="ytd-goals"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-label">Calls by response district — this week vs YTD</div>
+        <div id="district-rows"></div>
+      </div>
+      <div class="card">
+        <div class="section-label">Incident types — this week vs YTD</div>
+        <div id="disc-rows"></div>
+        <div class="avg-grid">
+          <div class="avg-item"><div class="avg-label">Avg turnout</div><div class="avg-value" id="avg-turnout">—</div></div>
+          <div class="avg-item"><div class="avg-label">Avg travel</div><div class="avg-value" id="avg-travel">—</div></div>
+          <div class="avg-item"><div class="avg-label">Avg response</div><div class="avg-value" id="avg-response">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">12-week response time trend</div>
+      <div style="position:relative;width:100%;height:180px">
+        <canvas id="trendChart" role="img" aria-label="12-week response time trend">Response time trends over 12 weeks.</canvas>
+      </div>
+      <div class="trend-legend">
+        <span><span class="legend-swatch" style="background:#A32D2D"></span>Fire response</span>
+        <span><span class="legend-swatch" style="background:#185FA5"></span>EMS response</span>
+        <span><span class="legend-swatch" style="background:#bbb"></span>4 min target</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-text">City of Salisbury Fire Department · FY2026 Weekly Operations Report · Auto-generated from NERIS data</div>
+      <div class="footer-text" id="footer-date">—</div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+</div>
+
+<script src="https://js.arcgis.com/4.29/"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+require([
+  "esri/identity/OAuthInfo",
+  "esri/identity/IdentityManager",
+  "esri/portal/Portal"
+], function(OAuthInfo, IdentityManager, Portal) {
+
+  const LAYER_URL = "https://services6.arcgis.com/Hx8jJ6McXQ0jnqLk/arcgis/rest/services/NERIS_Incidents_Salisbury_FD_55/FeatureServer/0/query";
+  const PORTAL_URL = "https://salisbury.maps.arcgis.com";
+
+  const info = new OAuthInfo({
+    appId: "arcgisonline",
+    portalUrl: PORTAL_URL,
+    popup: false
+  });
+  IdentityManager.registerOAuthInfos([info]);
+
+  let trendChartInst = null;
+
+  window.signIn = function() {
+    IdentityManager.getCredential(PORTAL_URL + "/sharing").then(cred => {
+      showReport(cred);
+    }).catch(e => {
+      console.error(e);
+      alert("Sign in failed. Please try again.");
+    });
+  };
+
+  window.signOut = function() {
+    IdentityManager.destroyCredentials();
+    document.getElementById('report-page').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'block';
+  };
+
+  function showReport(cred) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('report-page').style.display = 'block';
+    document.getElementById('user-display').textContent =
+      'Signed in as: ' + (cred.userId || cred.token.slice(0,8)+'...');
+    const today = new Date();
+    document.getElementById('week-end').value = today.toISOString().split('T')[0];
+    loadReport();
+  }
+
+  IdentityManager.checkSignInStatus(PORTAL_URL + "/sharing").then(cred => {
+    showReport(cred);
+  }).catch(() => {
+    // Not signed in — show login screen
+  });
+
+  function fmtDate(d) {
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+  function avg(arr) {
+    const v = arr.filter(x=>x!=null&&x>0);
+    return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+  }
+  function gaugeArc(p, target) {
+    const off = 100.53*(1-p/100);
+    const color = p>=target?'#639922':p>=target*0.9?'#BA7517':'#A32D2D';
+    const cls   = p>=target?'met':p>=target*0.9?'amber':'not-met';
+    return {off,color,cls};
+  }
+  function deltaHtml(wv, ya) {
+    if (!ya) return '';
+    const d = Math.round(((wv-ya)/ya)*100);
+    if (d>0) return `<div class="metric-delta delta-down">+${d}% vs avg</div>`;
+    if (d<0) return `<div class="metric-delta delta-up">${d}% vs avg</div>`;
+    return `<div class="metric-delta" style="color:#888">On par with avg</div>`;
+  }
+
+  async function queryAll(token) {
+    const fields = 'discipline,call_create,turnout_min,travel_min,response_min,goal_fire_turnout_met,goal_ems_turnout_met,goal_fire_travel_met,goal_fire_response_met,goal_bls_response_met,goal_als_response_met,goal_fire_confined_met,district_name,had_ff_casualty,fiscal_quarter';
+    let all = [], offset = 0;
+    while(true) {
+      const params = new URLSearchParams({
+        where:"1=1", outFields:fields,
+        resultOffset:offset, resultRecordCount:1000,
+        orderByFields:'call_create DESC', f:'json', token
+      });
+      const r = await fetch(LAYER_URL+'?'+params);
+      const d = await r.json();
+      if (d.error) throw new Error(d.error.message);
+      const feats = (d.features||[]).map(f=>f.attributes);
+      all = all.concat(feats);
+      if (!d.exceededTransferLimit || feats.length===0) break;
+      offset += feats.length;
+    }
+    return all;
+  }
+
+  window.loadReport = async function() {
+    document.getElementById('loading').style.display='block';
+    document.getElementById('report-content').style.display='none';
+    document.getElementById('error').style.display='none';
+    try {
+      const cred = await IdentityManager.getCredential(PORTAL_URL+"/sharing");
+      const token = cred.token;
+      const all   = await queryAll(token);
+
+      const weekEndVal = document.getElementById('week-end').value;
+      const weekEnd   = new Date(weekEndVal+'T23:59:59');
+      const weekStart = new Date(weekEnd); weekStart.setDate(weekEnd.getDate()-6); weekStart.setHours(0,0,0,0);
+
+      const weekRecs = all.filter(r=>{
+        if (!r.call_create) return false;
+        const dt = new Date(r.call_create);
+        return dt>=weekStart && dt<=weekEnd;
+      });
+
+      document.getElementById('report-date-range').textContent =
+        `Week of ${fmtDate(weekStart)} – ${fmtDate(weekEnd)}`;
+      document.getElementById('report-quarter').textContent =
+        all[0]?.fiscal_quarter || 'FY2026';
+      document.getElementById('h-week-total').textContent = weekRecs.length;
+      document.getElementById('h-ytd-total').textContent  = all.length.toLocaleString();
+
+      const ffWeek = weekRecs.filter(r=>r.had_ff_casualty).length;
+      const ffYTD  = all.filter(r=>r.had_ff_casualty).length;
+      document.getElementById('h-ff-week').textContent = ffWeek;
+      document.getElementById('h-ff-rate').textContent =
+        all.length ? (ffYTD/all.length*100).toFixed(3)+' / 100' : '—';
+
+      const now = new Date();
+      document.getElementById('h-generated').textContent = fmtDate(now);
+      document.getElementById('footer-date').textContent =
+        `Data as of ${fmtDate(now)} · Next report: ${fmtDate(new Date(weekEnd.getTime()+7*86400000))}`;
+
+      const discs      = ['FIRE','MEDICAL','PUBSERV','NOEMERG','HAZSIT'];
+      const discLabels = {FIRE:'Fire',MEDICAL:'Medical / EMS',PUBSERV:'Public service',NOEMERG:'Non-emergency',HAZSIT:'Hazmat'};
+      const discColors = {FIRE:'#A32D2D',MEDICAL:'#185FA5',PUBSERV:'#BA7517',NOEMERG:'#888780',HAZSIT:'#639922'};
+      const weeksElapsed = Math.max(1,Math.ceil((weekEnd-new Date('2026-01-01'))/604800000));
+
+      discs.forEach(d=>{
+        const id = {FIRE:'fire',MEDICAL:'ems',PUBSERV:'pub',NOEMERG:'noe',HAZSIT:'haz'}[d];
+        if (!id) return;
+        const wv = weekRecs.filter(r=>(r.discipline||'').toUpperCase()===d).length;
+        const ya = all.filter(r=>(r.discipline||'').toUpperCase()===d).length/weeksElapsed;
+        const el = document.getElementById('m-'+id+'-week');
+        if (!el) return;
+        el.textContent = wv;
+        document.getElementById('m-'+id+'-avg').textContent = ya.toFixed(1);
+        const dEl = document.getElementById('m-'+id+'-delta');
+        if (dEl) dEl.outerHTML = deltaHtml(wv,ya).replace('<div ','<div id="m-'+id+'-delta" ');
+      });
+
+      const goalDefs = [
+        {key:'goal_fire_turnout_met', label:'Fire turnout\n≤ 90 sec', target:90, filter:r=>(r.discipline||'').toUpperCase()==='FIRE'},
+        {key:'goal_ems_turnout_met',  label:'EMS turnout\n≤ 60 sec', target:90, filter:r=>(r.discipline||'').toUpperCase()==='MEDICAL'},
+        {key:'goal_fire_travel_met',  label:'Fire travel\n≤ 4 min',  target:90, filter:r=>(r.discipline||'').toUpperCase()==='FIRE'},
+        {key:'goal_fire_response_met',label:'Fire response\n≤ 10 min',target:90,filter:r=>(r.discipline||'').toUpperCase()==='FIRE'},
+        {key:'goal_bls_response_met', label:'BLS arrival\n≤ 4 min',  target:90, filter:r=>true},
+        {key:'goal_als_response_met', label:'ALS arrival\n≤ 8 min',  target:90, filter:r=>true},
+      ];
+
+      const gaugesEl = document.getElementById('gauges-grid');
+      gaugesEl.innerHTML='';
+      goalDefs.forEach(g=>{
+        const wr  = weekRecs.filter(g.filter).filter(r=>r[g.key]!=null);
+        const wm  = wr.filter(r=>r[g.key]===1||r[g.key]===true||r[g.key]==='true').length;
+        const wp  = wr.length?Math.round(wm/wr.length*100):null;
+        const {off,color,cls} = gaugeArc(wp||0,g.target);
+        const lines = g.label.split('\n');
+        gaugesEl.innerHTML+=`<div class="gauge-wrap">
+          <svg width="80" height="48" viewBox="0 0 80 48" role="img" aria-label="${g.label}">
+            <path d="M8,44 A32,32 0 0,1 72,44" fill="none" stroke="#e8e8e8" stroke-width="8" stroke-linecap="round"/>
+            <path d="M8,44 A32,32 0 0,1 72,44" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="${off}"/>
+          </svg>
+          <div class="gauge-pct ${cls}">${wp!=null?wp+'%':'—'}</div>
+          <div class="gauge-label">${lines[0]}<br>${lines[1]||''}</div>
+          <div class="gauge-target-lbl">target ${g.target}%</div>
+        </div>`;
+      });
+
+      const ytdGoalsEl = document.getElementById('ytd-goals');
+      ytdGoalsEl.innerHTML='';
+      [...goalDefs,{key:'goal_fire_confined_met',label:'Fire confined to room',target:50,filter:r=>(r.discipline||'').toUpperCase()==='FIRE'}].forEach(g=>{
+        const yr = all.filter(g.filter).filter(r=>r[g.key]!=null);
+        const ym = yr.filter(r=>r[g.key]===1||r[g.key]===true||r[g.key]==='true').length;
+        const yp = yr.length?Math.round(ym/yr.length*100):null;
+        const met = yp!=null&&yp>=g.target;
+        const near= yp!=null&&yp>=g.target*0.9&&!met;
+        const color=met?'#639922':near?'#BA7517':'#A32D2D';
+        const cls  =met?'met':near?'amber':'not-met';
+        const bw   =Math.min(yp||0,100);
+        ytdGoalsEl.innerHTML+=`<div class="goal-row">
+          <div class="goal-name">${g.label.replace('\n',' ')}</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${bw}%;background:${color}"></div><div class="bar-target-line" style="left:${g.target}%"></div></div>
+          <div class="pct ${cls}">${yp!=null?yp+'%':'—'}</div>
+          <div class="goal-target">goal ${g.target}%</div>
+        </div>`;
+      });
+
+      const distCount={}, distYTD={};
+      weekRecs.forEach(r=>{const d=r.district_name||'Outside zone';distCount[d]=(distCount[d]||0)+1;});
+      all.forEach(r=>{const d=r.district_name||'Outside zone';distYTD[d]=(distYTD[d]||0)+1;});
+      const maxDist=Math.max(...Object.values(distCount),1);
+      const distEl=document.getElementById('district-rows');
+      distEl.innerHTML='';
+      Object.entries(distCount).sort((a,b)=>b[1]-a[1]).forEach(([name,cnt])=>{
+        const bw=Math.round(cnt/maxDist*100);
+        const outside=name==='Outside zone';
+        distEl.innerHTML+=`<div class="district-row">
+          <div class="district-name" style="color:${outside?'#aaa':'#222'}">${name}</div>
+          <div class="district-bar"><div class="district-fill" style="width:${bw}%;background:${outside?'#aaa':'#A32D2D'}"></div></div>
+          <div class="district-count" style="color:${outside?'#aaa':'#222'}">${cnt}</div>
+          <div class="district-ytd">YTD ${distYTD[name]||0}</div>
+        </div>`;
+      });
+
+      const discEl=document.getElementById('disc-rows');
+      discEl.innerHTML='';
+      discs.forEach(d=>{
+        const wv=weekRecs.filter(r=>(r.discipline||'').toUpperCase()===d).length;
+        const yv=all.filter(r=>(r.discipline||'').toUpperCase()===d).length;
+        if(!wv&&!yv) return;
+        discEl.innerHTML+=`<div class="disc-row">
+          <div class="disc-dot" style="background:${discColors[d]}"></div>
+          <div class="disc-name">${discLabels[d]}</div>
+          <div class="disc-week">${wv}</div>
+          <div class="disc-ytd">YTD ${yv}</div>
+        </div>`;
+      });
+
+      const wt=avg(weekRecs.map(r=>r.turnout_min));
+      const wtr=avg(weekRecs.map(r=>r.travel_min));
+      const wr2=avg(weekRecs.map(r=>r.response_min));
+      document.getElementById('avg-turnout').textContent  = wt  ? wt.toFixed(1)+' min'  : '—';
+      document.getElementById('avg-travel').textContent   = wtr ? wtr.toFixed(1)+' min' : '—';
+      document.getElementById('avg-response').textContent = wr2 ? wr2.toFixed(1)+' min' : '—';
+
+      const tLabels=[],fireD=[],emsD=[];
+      for(let i=11;i>=0;i--){
+        const we=new Date(weekEnd); we.setDate(we.getDate()-i*7);
+        const ws=new Date(we); ws.setDate(we.getDate()-6); ws.setHours(0,0,0,0);
+        const wr=all.filter(r=>{if(!r.call_create)return false;const dt=new Date(r.call_create);return dt>=ws&&dt<=we;});
+        tLabels.push(we.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+        fireD.push(avg(wr.filter(r=>(r.discipline||'').toUpperCase()==='FIRE').map(r=>r.response_min)));
+        emsD.push(avg(wr.filter(r=>(r.discipline||'').toUpperCase()==='MEDICAL').map(r=>r.response_min)));
+      }
+      if(trendChartInst){trendChartInst.destroy();}
+      trendChartInst=new Chart(document.getElementById('trendChart'),{
+        type:'line',
+        data:{labels:tLabels,datasets:[
+          {label:'Fire',data:fireD,borderColor:'#A32D2D',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#A32D2D',tension:0.3,spanGaps:true},
+          {label:'EMS',data:emsD,borderColor:'#185FA5',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#185FA5',tension:0.3,spanGaps:true},
+          {label:'Target',data:tLabels.map(()=>4),borderColor:'#bbb',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:0}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+          scales:{y:{min:0,max:12,ticks:{font:{size:11},callback:v=>v+' min'},grid:{color:'rgba(0,0,0,0.05)'}},
+          x:{ticks:{font:{size:10},maxRotation:45,autoSkip:false},grid:{display:false}}}}
+      });
+
+      document.getElementById('loading').style.display='none';
+      document.getElementById('report-content').style.display='block';
+    } catch(e) {
+      document.getElementById('loading').style.display='none';
+      document.getElementById('error').innerHTML=
+        `<div class="error-msg">Error: ${e.message}</div>`;
+      document.getElementById('error').style.display='block';
+      document.getElementById('report-content').style.display='block';
+    }
+  };
+});
+</script>
+</body>
+</html>
